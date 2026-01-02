@@ -452,9 +452,14 @@ private:
 
 public:
   _LIBCPP_HIDE_FROM_ABI void* operator new(size_t __size) {
-    void* const __ptr      = ::operator new(__size + sizeof(__dealloc_fn));
-    __dealloc_fn __dealloc = [](void* const __dealloc_ptr, const size_t __dealloc_size) static noexcept -> void {
+    void* const __ptr = ::operator new(__size + sizeof(__dealloc_fn));
+    __dealloc_fn __dealloc =
+        [](void* const __dealloc_ptr, [[maybe_unused]] const size_t __dealloc_size) static noexcept -> void {
+#  if defined(__cpp_sized_deallocation) && __cpp_sized_deallocation >= 201309L
       ::operator delete(__dealloc_ptr, __dealloc_size + sizeof(__dealloc_fn));
+#  else
+      ::operator delete(__dealloc_ptr);
+#  endif
     };
 
     __dealloc_fn* const __dealloc_ptr = reinterpret_cast<__dealloc_fn*>(reinterpret_cast<uintptr_t>(__ptr) + __size);
